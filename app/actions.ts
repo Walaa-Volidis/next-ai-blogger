@@ -1,13 +1,12 @@
 'use server'
 
-import OpenAI from 'openai'
+import Groq from 'groq-sdk'
 import { redirect } from 'next/navigation'
-import { decode } from 'base64-arraybuffer'
 import { supabase } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
 import { auth } from '@clerk/nextjs/server'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 export async function createCompletion(prompt: string) {
   if (!prompt) {
@@ -26,9 +25,8 @@ export async function createCompletion(prompt: string) {
     }
   ]
 
-  const completion = await openai.chat.completions.create({
-    //model: 'gpt-4',
-    model: 'gpt-3.5-turbo', // or 'gpt-4o-mini'
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
     messages
   })
 
@@ -37,39 +35,17 @@ export async function createCompletion(prompt: string) {
     return { error: 'Unable to generate the blog content.' }
   }
 
-  const image = await openai.images.generate({
-    model: 'dall-e-3',
-    prompt: `Generate an image for a blog post about "${prompt}"`,
-    n: 1,
-    size: '1792x1024',
-    response_format: 'b64_json'
-  })
-
-  const imageName = `blog-${Date.now()}`
-  const imageData = image?.data?.[0]?.b64_json as string
-  if (!imageData) {
-    return { error: 'Unable to generate the blog image.' }
-  }
-
-  const { data, error } = await supabase.storage
-    .from('blogs')
-    .upload(imageName, decode(imageData), {
-      contentType: 'image/png'
-    })
-  if (error) {
-    return { error: 'Unable to upload the blog image to Storage.' }
-  }
-
-  const path = data?.path
-  const imageUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/blogs/${path}`
+  const imageurl = 'https://placehold.co/1792x1024/png?text=Blog+Post'
 
   const { data: blog, error: blogError } = await supabase
     .from('blogs')
-    .insert([{ title: prompt, content, imageUrl, userId }])
+    .insert([{ title: prompt, content, imageurl, userid: userId }])
     .select()
 
   if (blogError) {
-    return { error: 'Unable to insert the blog into the database.' }
+    return {
+      error: `Unable to insert the blog into the database: ${blogError.message}`
+    }
   }
 
   const blogId = blog?.[0]?.id
