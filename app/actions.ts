@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { decode } from 'base64-arraybuffer'
 import { supabase } from '@/lib/supabase'
 import { revalidatePath } from 'next/cache'
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -14,7 +14,7 @@ export async function createCompletion(prompt: string) {
     return { error: 'Prompt is required' }
   }
 
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) {
     return { error: 'User is not logged in' }
   }
@@ -27,7 +27,8 @@ export async function createCompletion(prompt: string) {
   ]
 
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4',
+    //model: 'gpt-4',
+    model: 'gpt-3.5-turbo', // or 'gpt-4o-mini'
     messages
   })
 
