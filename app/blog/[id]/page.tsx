@@ -4,8 +4,13 @@ import Markdown from 'react-markdown'
 import { getBlogById } from '@/lib/supabase'
 import { ChevronLeft } from 'lucide-react'
 
-export default async function Blog({ params }: { params: { id: string } }) {
-  const { content, imageUrl } = await getBlogById(Number(params.id))
+export default async function Blog({
+  params
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const { content, imageurl } = await getBlogById(Number(id))
 
   return (
     <section className='py-12'>
@@ -19,7 +24,7 @@ export default async function Blog({ params }: { params: { id: string } }) {
         </Link>
 
         <section className='prose mt-6 max-w-none'>
-          <Image alt='' src={imageUrl} width={1792} height={1024} />
+          <Image alt='' src={imageurl} width={1792} height={1024} />
           <Markdown>{content}</Markdown>
         </section>
       </div>

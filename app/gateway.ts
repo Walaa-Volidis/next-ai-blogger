@@ -2,14 +2,14 @@
 
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 
 export async function createCompletion(prompt: string) {
   if (!prompt) {
     return { error: 'Prompt is required' }
   }
 
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) {
     return { error: 'User is not logged in' }
   }
