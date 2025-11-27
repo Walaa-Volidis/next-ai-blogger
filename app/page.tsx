@@ -29,7 +29,7 @@ export default async function Home() {
                   <Link href={`/blog/${blog.id}`} key={blog.id}>
                     <Image
                       alt=''
-                      src={blog.imageUrl}
+                      src={blog.imageurl}
                       width={200}
                       height={200}
                       className='w-full'
