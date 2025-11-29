@@ -3,8 +3,8 @@
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useFormStatus } from 'react-dom'
-import { createCompletion } from '@/app/actions'
 import { SignInButton, SignedIn, SignedOut } from '@clerk/nextjs'
+import { useAuth } from '@clerk/nextjs'
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/card'
 
 export default function Form() {
+  const { userId } = useAuth()
+
   async function action(formData: FormData) {
     const prompt = formData.get('prompt')
     if (!prompt) {
@@ -24,9 +26,37 @@ export default function Form() {
       return
     }
 
-    const { error } = await createCompletion(prompt as string)
-    if (error) {
-      toast.error(error)
+    if (!userId) {
+      toast.error('Please sign in to continue.')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/trigger-blog-workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt: prompt.toString(),
+          userId: userId
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to start blog generation')
+      }
+      toast.success('Blog generation started! It will appear shortly.')
+      setTimeout(() => {
+        window.location.reload()
+      }, 3000)
+    } catch (error) {
+      console.error('Blog generation error:', error)
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to generate blog'
+      )
     }
   }
 
